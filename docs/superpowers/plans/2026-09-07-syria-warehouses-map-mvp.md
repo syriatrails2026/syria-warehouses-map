@@ -16,6 +16,7 @@
 - All warehouse reads go through `src/data/warehouseSource.ts`. No component or module outside `src/data/` may import `warehouses.generated.json` directly.
 - A governorate/district/subdistrict with 0 warehouses is still rendered, filled with the neutral color `#e5e2d8`, labeled "0 مخازن" — never hidden.
 - No marker clustering.
+- GeoJSON ring winding: `d3-geo`'s spherical bounds/area algorithms expect exterior rings wound **clockwise** (lon=x, lat=y), which is the *opposite* of the RFC 7946 convention (counterclockwise) that most real-world GIS exports follow. Getting this wrong doesn't error — it silently renders "the whole sphere minus this shape" (a correct-looking tiny sliver plus a giant stray rectangle covering the canvas). `geoRepository.ts` must normalize every loaded FeatureCollection with `@turf/rewind`'s `{ reverse: true }` option at load time so this holds regardless of the source file's convention — do not rely on fixture/source files already being wound correctly.
 - Color tokens (exact hex, from the approved palette):
   `--color-green-dark:#0f2a1c; --color-green-mid:#1d4a30; --color-green-light:#2f6b46; --color-gold:#c8a84b; --color-sand:#dcc27a; --color-bg-warm:#f7f5ef; --color-bg-warm-alt:#faf9f6; --color-text:#1f2d24; --color-neutral:#e5e2d8;`
 - Google Maps link format: `https://www.google.com/maps?q=${lat},${lng}`.
@@ -64,7 +65,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "d3-geo": "^3.1.1",
-    "d3-scale": "^4.0.2"
+    "d3-scale": "^4.0.2",
+    "@turf/rewind": "^7.4.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.5.0",
@@ -289,7 +291,7 @@ git commit -m "chore: scaffold Vite + React + TS project with RTL shell and desi
 
 **Interfaces:**
 - Produces: `GovernorateFeature`, `DistrictFeature`, `SubdistrictFeature` types; `Warehouse` type.
-- Produces: `getGovernorates(): GovernorateFeature[]`, `getDistricts(governorateId: string): DistrictFeature[]`, `getSubdistricts(districtId: string): SubdistrictFeature[]`, `getSubdistrictById(id: string): SubdistrictFeature | undefined` — used by Task 4 (stats), Task 8 (MapCanvas), and Task 12 (App). (Task 3's generator script reads the raw GeoJSON files directly with `fs`, not through this module — see Task 3.)
+- Produces: `getGovernorates(): GovernorateFeature[]`, `getDistricts(governorateId: string): DistrictFeature[]`, `getSubdistricts(districtId: string): SubdistrictFeature[]`, `getSubdistrictById(id: string): SubdistrictFeature | undefined` — used by Task 4 (stats), Task 8 (MapCanvas), and Task 12 (App). (Task 3's generator script reads the raw GeoJSON files directly with `fs`, not through this module — see Task 3.) All three collections are rewound with `@turf/rewind` (`{ reverse: true }`) at load time — see the Global Constraints note on GeoJSON ring winding.
 
 - [ ] **Step 1: Create `src/types/geo.ts`**
 
@@ -437,14 +439,28 @@ export interface Warehouse {
 - [ ] **Step 7: Create `src/data/geoRepository.ts`**
 
 ```ts
+import rewind from '@turf/rewind';
+import type { FeatureCollection } from 'geojson';
 import governoratesGeo from './geo/governorates.json';
 import districtsGeo from './geo/districts.json';
 import subdistrictsGeo from './geo/subdistricts.json';
 import type { DistrictFeature, GovernorateFeature, SubdistrictFeature } from '../types/geo';
 
-const governorates = governoratesGeo.features as unknown as GovernorateFeature[];
-const districts = districtsGeo.features as unknown as DistrictFeature[];
-const subdistricts = subdistrictsGeo.features as unknown as SubdistrictFeature[];
+/**
+ * d3-geo's spherical bounds/area algorithms expect exterior rings wound
+ * clockwise (lon=x, lat=y) — the opposite of the RFC 7946 GeoJSON convention
+ * (counterclockwise) that most real-world GIS exports follow. Without this,
+ * a correctly-authored GeoJSON file renders as "the whole sphere minus this
+ * shape" once projected. Rewinding at load time makes this work regardless
+ * of which convention the source file (fixture now, real data later) uses.
+ */
+function loadRewound<T>(collection: unknown): T {
+  return rewind(collection as FeatureCollection, { reverse: true }) as T;
+}
+
+const governorates = loadRewound<FeatureCollection>(governoratesGeo).features as unknown as GovernorateFeature[];
+const districts = loadRewound<FeatureCollection>(districtsGeo).features as unknown as DistrictFeature[];
+const subdistricts = loadRewound<FeatureCollection>(subdistrictsGeo).features as unknown as SubdistrictFeature[];
 
 export function getGovernorates(): GovernorateFeature[] {
   return governorates;
@@ -2487,6 +2503,12 @@ git commit -m "feat: add Sidebar (governorate list + warehouse search) and Bread
 .app-layout__map {
   flex: 1;
   min-width: 0;
+  /* Without this, the flex item can't shrink below its content's height. Since
+     ChoroplethLevel/WarehousePinsLevel measure their own container's height via
+     ResizeObserver and set the SVG's height to match, an unconstrained item lets
+     that feed back into itself — SVG height grows the container, which grows the
+     next measurement, etc. — ballooning to thousands of pixels tall. */
+  min-height: 0;
   padding: 12px;
 }
 
@@ -2524,6 +2546,23 @@ export default function App() {
   useEffect(() => {
     getWarehouses().then(setWarehouses);
   }, []);
+
+  // The browser back/forward buttons change `selection` via useSelection's
+  // popstate listener, bypassing handleSelectionChange (which is the only
+  // other place that clears activeWarehouse). Without this, going back to a
+  // different scope leaves a stale WarehouseCard open for a warehouse that's
+  // no longer in view. This only closes the card on an actual mismatch, so
+  // it doesn't fight handleSelectWarehouse's own selection+card update.
+  useEffect(() => {
+    if (
+      activeWarehouse &&
+      (activeWarehouse.governorateId !== selection.governorateId ||
+        activeWarehouse.districtId !== selection.districtId ||
+        activeWarehouse.subdistrictId !== selection.subdistrictId)
+    ) {
+      setActiveWarehouse(null);
+    }
+  }, [selection, activeWarehouse]);
 
   const governorates = useMemo(() => getGovernorates(), []);
   const overallStats = useMemo(() => computeOverallStats(warehouses, governorates), [warehouses, governorates]);
@@ -2619,7 +2658,9 @@ describe('App', () => {
   it('renders the header, stats toolbar, and national map level on first load', async () => {
     render(<App />);
     expect(screen.getByText('منصة مخازن سوريا')).toBeInTheDocument();
-    expect(await screen.findByText('محافظة تجريبية أ')).toBeInTheDocument();
+    // "محافظة تجريبية أ" appears both in the always-visible Sidebar list and in the
+    // map's own labels, so this asserts at least one render rather than a single match.
+    expect((await screen.findAllByText('محافظة تجريبية أ')).length).toBeGreaterThan(0);
     expect(screen.getByText('مخازن ضمن سوريا')).toBeInTheDocument();
   });
 
@@ -2634,8 +2675,10 @@ describe('App', () => {
   it('opens a warehouse card when a pin is clicked at the subdistrict level', async () => {
     window.history.pushState({}, '', '/?gov=gov-a&district=dist-a1&sub=sub-a1a');
     render(<App />);
-    const pin = await screen.findByTestId(/^pin-/);
-    fireEvent.click(pin);
+    // The fixture spreads warehouses evenly across subdistricts (175 each here), so
+    // many pins match this testid pattern — click the first one found.
+    const pins = await screen.findAllByTestId(/^pin-/);
+    fireEvent.click(pins[0]);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'فتح في خرائط جوجل' })).toHaveAttribute('href', expect.stringContaining('https://www.google.com/maps?q='));
   });
@@ -2645,7 +2688,23 @@ describe('App', () => {
     render(<App />);
     await screen.findByText('منطقة أ1');
     fireEvent.click(screen.getByText('سوريا'));
-    expect(await screen.findByText('محافظة تجريبية ب')).toBeInTheDocument();
+    expect((await screen.findAllByText('محافظة تجريبية ب')).length).toBeGreaterThan(0);
+  });
+
+  it('closes a stale warehouse card when the browser back button navigates to a different scope', async () => {
+    window.history.pushState({}, '', '/?gov=gov-a&district=dist-a1&sub=sub-a1a');
+    window.history.pushState({}, '', '/?gov=gov-a&district=dist-a2&sub=sub-a2a');
+    render(<App />);
+    const pins = await screen.findAllByTestId(/^pin-/);
+    fireEvent.click(pins[0]);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    // Simulate the browser back button: the URL changes to the previous
+    // history entry and fires 'popstate' without going through setSelection.
+    window.history.replaceState({}, '', '/?gov=gov-a&district=dist-a1&sub=sub-a1a');
+    fireEvent(window, new PopStateEvent('popstate'));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 ```
@@ -2653,7 +2712,7 @@ describe('App', () => {
 - [ ] **Step 4: Run the full test suite**
 
 Run: `npm test`
-Expected: every test file across the project passes (this task's 4 plus all prior tasks').
+Expected: every test file across the project passes (this task's 5 plus all prior tasks' — 64 tests total).
 
 - [ ] **Step 5: Type-check and build**
 
@@ -2662,16 +2721,18 @@ Expected: `tsc -b` reports no type errors, and Vite produces a `dist/` bundle su
 
 - [ ] **Step 6: Manual smoke test in the browser**
 
-Run: `npm run dev`, open the printed local URL, and verify by hand:
+Run: `npm run dev`, open the printed local URL, and verify by hand. This step matters even though every piece has unit/component tests — jsdom never lays out real CSS, so flexbox sizing bugs and rendering artifacts (like the two below, both found this way and unreachable by the automated tests) only show up here:
 - Page renders right-to-left, Tajawal font is applied, header shows "منصة مخازن سوريا".
+- The national map shows **two adjacent, correctly-sized governorate rectangles** side by side, each labeled with its name and count — not one giant rectangle covering the canvas with a barely-visible sliver (a sign the GeoJSON ring-winding fix in `geoRepository.ts` is missing or broken).
+- The map area has a sane, bounded height matching its layout slot — not a runaway multi-thousand-pixel-tall SVG that pushes the page into a long vertical scroll (a sign `.app-layout__map`'s `min-height: 0` is missing).
 - Toolbar shows 5 stat tiles with correct totals (1,400 total warehouses).
 - Clicking a governorate on the map drills into its districts; clicking a district drills into its subdistricts; clicking a subdistrict shows individual pins.
 - Clicking a pin opens the warehouse card with a working "فتح في خرائط جوجل" link (opens Google Maps at the right coordinates in a new tab).
 - The breadcrumb reflects the current level and each segment is clickable to jump back up.
 - Clicking the sidebar governorate list navigates the map to match.
 - Typing a warehouse name fragment into the sidebar search shows matching results; clicking one navigates the map to that warehouse's subdistrict and opens its card.
-- Browser back button steps back up one map level at a time.
-- Resize the window narrow (< 720px) and confirm the sidebar stacks below the map instead of overlapping it.
+- Browser back button steps back up one map level at a time, **and closes any open warehouse card that no longer matches the new scope** (rather than leaving a stale card open).
+- Resize the window narrow (< 720px) and confirm the sidebar and map stack vertically with no overlap.
 
 Fix any visual issues found (spacing, overflow, contrast) directly in the relevant component's `.css` file before proceeding — this step is expected to produce small follow-up edits.
 
