@@ -2082,20 +2082,27 @@ const STATS: OverallStats = {
 
 describe('StatsToolbar', () => {
   it('renders all five stat tiles with formatted values', () => {
-    render(<StatsToolbar stats={STATS} contextualLabel="مخازن ضمن سوريا" contextualCount={1400} />);
+    render(<StatsToolbar stats={STATS} contextualLabel="مخازن ضمن المحافظة الحالية" contextualCount={350} />);
     expect(screen.getByText('١٬٤٠٠')).toBeInTheDocument();
     expect(screen.getByText('٢٬١٠٠٬٠٠٠')).toBeInTheDocument();
     expect(screen.getByText('١٬٥٠٠')).toBeInTheDocument();
     expect(screen.getByText('محافظة تجريبية أ')).toBeInTheDocument();
+    expect(screen.getByText('٣٥٠')).toBeInTheDocument();
+    expect(screen.getByText('مخازن ضمن المحافظة الحالية')).toBeInTheDocument();
+  });
+
+  it('does not crash when the contextual count equals the national total (e.g. no drill-down yet)', () => {
+    render(<StatsToolbar stats={STATS} contextualLabel="مخازن ضمن سوريا" contextualCount={1400} />);
+    expect(screen.getAllByText('١٬٤٠٠')).toHaveLength(2);
     expect(screen.getByText('مخازن ضمن سوريا')).toBeInTheDocument();
   });
 });
 ```
 
-- [ ] **Step 10: Run the test**
+- [ ] **Step 10: Run the tests**
 
 Run: `npm test -- src/components/StatsToolbar/StatsToolbar.test.tsx`
-Expected: 1 test passes. (Note: `toLocaleString('ar-SY')` renders Eastern Arabic-Indic digits — this is expected and correct for an Arabic-facing UI.)
+Expected: 2 tests pass. (Note: `toLocaleString('ar-SY')` renders Eastern Arabic-Indic digits — this is expected and correct for an Arabic-facing UI. The fixture originally used `contextualCount={1400}`, the same value as `totalWarehouses`, which made `getByText('١٬٤٠٠')` ambiguous — fixed by using a distinct value for the main assertion and adding a second test that explicitly covers the equal-values case with `getAllByText`.)
 
 - [ ] **Step 11: Commit**
 
