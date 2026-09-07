@@ -24,15 +24,14 @@ export function WarehousePinsLevel({ subdistrict, warehouses, onSelectWarehouse 
           if (!coords) return null;
           const [cx, cy] = coords;
           return (
-            <circle
+            <g
               key={warehouse.id}
-              className="warehouse-pins-level__pin"
-              cx={cx}
-              cy={cy}
-              r={6}
               data-testid={`pin-${warehouse.id}`}
               onClick={() => onSelectWarehouse(warehouse)}
-            />
+            >
+              <circle className="warehouse-pins-level__touch-target" cx={cx} cy={cy} r={14} fill="transparent" />
+              <circle className="warehouse-pins-level__pin" cx={cx} cy={cy} r={6} />
+            </g>
           );
         })}
       </svg>

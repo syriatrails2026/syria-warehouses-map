@@ -32,3 +32,15 @@
   color: var(--color-green-mid);
   font-weight: 700;
 }
+
+@media (max-width: 480px) {
+  .warehouse-card {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: auto;
+    min-width: 0;
+    border-radius: 12px 12px 0 0;
+  }
+}

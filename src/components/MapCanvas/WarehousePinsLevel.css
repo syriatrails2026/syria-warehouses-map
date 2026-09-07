@@ -14,3 +14,11 @@
 .warehouse-pins-level__pin:hover {
   fill: var(--color-sand);
 }
+
+.warehouse-pins-level__touch-target {
+  /* fill="transparent" alone is not hit-testable by default (SVG treats an
+     explicitly transparent fill as unpainted) — this makes the larger
+     invisible circle still receive clicks/taps. */
+  pointer-events: all;
+  cursor: pointer;
+}
