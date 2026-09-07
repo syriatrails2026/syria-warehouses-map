@@ -12,6 +12,10 @@
   padding: 0;
 }
 
+.breadcrumb button:hover {
+  text-decoration: underline;
+}
+
 .breadcrumb__sep {
   margin: 0 6px;
   color: var(--color-text);

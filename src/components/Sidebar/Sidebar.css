@@ -61,3 +61,13 @@
   color: var(--color-green-dark);
   font-weight: 700;
 }
+
+.sidebar__item:hover {
+  background: var(--color-bg-warm);
+}
+
+.sidebar__search:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+  border-color: var(--color-gold);
+}
