@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "gov-a", "name": "محافظة تجريبية أ" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[36.0, 34.0], [37.0, 34.0], [37.0, 35.0], [36.0, 35.0], [36.0, 34.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "gov-b", "name": "محافظة تجريبية ب" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[37.0, 34.0], [38.0, 34.0], [38.0, 35.0], [37.0, 35.0], [37.0, 34.0]]]
+      }
+    }
+  ]
+}
