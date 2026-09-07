@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 import { Breadcrumb } from './components/Breadcrumb/Breadcrumb';
+import { ErrorState } from './components/DataState/ErrorState';
+import { LoadingIndicator } from './components/DataState/LoadingIndicator';
 import { Header } from './components/Header/Header';
 import { MapCanvas } from './components/MapCanvas/MapCanvas';
 import { Sidebar } from './components/Sidebar/Sidebar';
@@ -14,14 +16,29 @@ import type { Selection } from './state/selection';
 import { useSelection } from './state/useSelection';
 import type { Warehouse } from './types/warehouse';
 
+type WarehousesLoadState = 'loading' | 'error' | 'ready';
+
 export default function App() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [loadState, setLoadState] = useState<WarehousesLoadState>('loading');
   const [selection, setSelection] = useSelection();
   const [activeWarehouse, setActiveWarehouse] = useState<Warehouse | null>(null);
 
-  useEffect(() => {
-    getWarehouses().then(setWarehouses);
+  const loadWarehouses = useCallback(() => {
+    setLoadState('loading');
+    getWarehouses()
+      .then((data) => {
+        setWarehouses(data);
+        setLoadState('ready');
+      })
+      .catch(() => {
+        setLoadState('error');
+      });
   }, []);
+
+  useEffect(() => {
+    loadWarehouses();
+  }, [loadWarehouses]);
 
   useEffect(() => {
     if (
@@ -87,7 +104,12 @@ export default function App() {
   return (
     <div className="app-layout">
       <Header />
-      <StatsToolbar stats={overallStats} contextualLabel={contextualLabel} contextualCount={contextualCount} />
+      <StatsToolbar
+        stats={overallStats}
+        contextualLabel={contextualLabel}
+        contextualCount={contextualCount}
+        loading={loadState === 'loading'}
+      />
       <Breadcrumb items={breadcrumbItems} onNavigate={handleSelectionChange} />
       <div className="app-layout__body">
         <Sidebar
@@ -99,12 +121,16 @@ export default function App() {
           onSelectWarehouse={handleSelectWarehouse}
         />
         <div className="app-layout__map">
-          <MapCanvas
-            selection={selection}
-            warehouses={warehouses}
-            onSelectionChange={handleSelectionChange}
-            onSelectWarehouse={setActiveWarehouse}
-          />
+          {loadState === 'loading' && <LoadingIndicator />}
+          {loadState === 'error' && <ErrorState onRetry={loadWarehouses} />}
+          {loadState === 'ready' && (
+            <MapCanvas
+              selection={selection}
+              warehouses={warehouses}
+              onSelectionChange={handleSelectionChange}
+              onSelectWarehouse={setActiveWarehouse}
+            />
+          )}
         </div>
       </div>
       {activeWarehouse && <WarehouseCard warehouse={activeWarehouse} onClose={() => setActiveWarehouse(null)} />}

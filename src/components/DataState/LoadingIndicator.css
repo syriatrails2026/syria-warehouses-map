@@ -1,0 +1,30 @@
+.loading-indicator {
+  height: 100%;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #8a9180;
+}
+
+.loading-indicator__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-sand);
+  border-top-color: var(--color-green-dark);
+  border-radius: 50%;
+  animation: loading-indicator-spin 0.9s linear infinite;
+}
+
+.loading-indicator__text {
+  font-size: 12px;
+  margin: 0;
+}
+
+@keyframes loading-indicator-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

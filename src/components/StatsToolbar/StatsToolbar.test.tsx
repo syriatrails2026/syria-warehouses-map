@@ -28,4 +28,13 @@ describe('StatsToolbar', () => {
     expect(screen.getAllByText('١٬٤٠٠')).toHaveLength(2);
     expect(screen.getByText('مخازن ضمن سوريا')).toBeInTheDocument();
   });
+
+  it('shows placeholder dots instead of numbers when loading', () => {
+    render(<StatsToolbar stats={STATS} contextualLabel="مخازن ضمن سوريا" contextualCount={1400} loading />);
+    expect(screen.getAllByText('···')).toHaveLength(5);
+    expect(screen.queryByText('١٬٤٠٠')).not.toBeInTheDocument();
+    // Labels stay visible even while loading
+    expect(screen.getByText('إجمالي المخازن')).toBeInTheDocument();
+    expect(screen.getByText('مخازن ضمن سوريا')).toBeInTheDocument();
+  });
 });
