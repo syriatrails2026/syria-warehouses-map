@@ -681,7 +681,7 @@ describe('generateWarehouses', () => {
 - [ ] **Step 3: Run the tests**
 
 Run: `npm test -- scripts/lib/generateWarehouses.test.mjs`
-Expected: 10 tests pass.
+Expected: 9 tests pass.
 
 - [ ] **Step 4: Write the CLI wrapper `scripts/generate-fake-warehouses.mjs`**
 
@@ -1839,7 +1839,7 @@ export function WarehouseCard({ warehouse, onClose }: WarehouseCardProps) {
         ×
       </button>
       <h3>{warehouse.name}</h3>
-      <p>المساحة: {warehouse.areaM2.toLocaleString('ar')} م²</p>
+      <p>المساحة: {warehouse.areaM2.toLocaleString('ar-SY')} م²</p>
       <a className="warehouse-card__link" href={mapsUrl} target="_blank" rel="noreferrer">
         فتح في خرائط جوجل
       </a>
@@ -1871,7 +1871,7 @@ describe('WarehouseCard', () => {
   it('shows the warehouse name and area', () => {
     render(<WarehouseCard warehouse={WAREHOUSE} onClose={() => {}} />);
     expect(screen.getByText('مخزن أ1أ-1')).toBeInTheDocument();
-    // areaM2.toLocaleString('ar') renders Eastern Arabic-Indic digits (١٬٥٠٠), not "1,500"
+    // areaM2.toLocaleString('ar-SY') renders Eastern Arabic-Indic digits (١٬٥٠٠), not "1,500"
     expect(screen.getByText(/١٬٥٠٠ م²/)).toBeInTheDocument();
   });
 
@@ -2053,11 +2053,11 @@ interface StatsToolbarProps {
 export function StatsToolbar({ stats, contextualLabel, contextualCount }: StatsToolbarProps) {
   return (
     <div className="stats-toolbar">
-      <StatTile label="إجمالي المخازن" value={stats.totalWarehouses.toLocaleString('ar')} />
-      <StatTile label="إجمالي المساحة (م²)" value={stats.totalAreaM2.toLocaleString('ar')} />
-      <StatTile label="متوسط مساحة المخزن (م²)" value={Math.round(stats.averageAreaM2).toLocaleString('ar')} />
+      <StatTile label="إجمالي المخازن" value={stats.totalWarehouses.toLocaleString('ar-SY')} />
+      <StatTile label="إجمالي المساحة (م²)" value={stats.totalAreaM2.toLocaleString('ar-SY')} />
+      <StatTile label="متوسط مساحة المخزن (م²)" value={Math.round(stats.averageAreaM2).toLocaleString('ar-SY')} />
       <StatTile label="أكبر محافظة" value={stats.topGovernorateName || '—'} />
-      <StatTile label={contextualLabel} value={contextualCount.toLocaleString('ar')} accent />
+      <StatTile label={contextualLabel} value={contextualCount.toLocaleString('ar-SY')} accent />
     </div>
   );
 }
@@ -2095,7 +2095,7 @@ describe('StatsToolbar', () => {
 - [ ] **Step 10: Run the test**
 
 Run: `npm test -- src/components/StatsToolbar/StatsToolbar.test.tsx`
-Expected: 1 test passes. (Note: `toLocaleString('ar')` renders Eastern Arabic-Indic digits — this is expected and correct for an Arabic-facing UI.)
+Expected: 1 test passes. (Note: `toLocaleString('ar-SY')` renders Eastern Arabic-Indic digits — this is expected and correct for an Arabic-facing UI.)
 
 - [ ] **Step 11: Commit**
 
