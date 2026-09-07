@@ -1,0 +1,18 @@
+.breadcrumb {
+  padding: 10px 20px;
+  font-size: 13px;
+  background: var(--color-bg-warm);
+}
+
+.breadcrumb button {
+  background: none;
+  border: none;
+  color: var(--color-green-mid);
+  font-weight: 700;
+  padding: 0;
+}
+
+.breadcrumb__sep {
+  margin: 0 6px;
+  color: var(--color-text);
+}
