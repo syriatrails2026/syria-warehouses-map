@@ -1,8 +1,10 @@
-import warehousesJson from './warehouses.generated.json';
 import type { Warehouse } from '../types/warehouse';
 
-const warehouses = warehousesJson as Warehouse[];
+let warehousesPromise: Promise<Warehouse[]> | null = null;
 
 export async function getWarehouses(): Promise<Warehouse[]> {
-  return warehouses;
+  if (!warehousesPromise) {
+    warehousesPromise = import('./warehouses.generated.json').then((mod) => mod.default as Warehouse[]);
+  }
+  return warehousesPromise;
 }
