@@ -4,6 +4,7 @@ import type { Selection } from '../../state/selection';
 import type { Warehouse } from '../../types/warehouse';
 import { ChoroplethLevel } from './ChoroplethLevel';
 import { WarehousePinsLevel } from './WarehousePinsLevel';
+import './MapCanvas.css';
 
 interface MapCanvasProps {
   selection: Selection;
@@ -13,46 +14,53 @@ interface MapCanvasProps {
 }
 
 export function MapCanvas({ selection, warehouses, onSelectionChange, onSelectWarehouse }: MapCanvasProps) {
+  const levelKey = `${selection.governorateId ?? ''}-${selection.districtId ?? ''}-${selection.subdistrictId ?? ''}`;
+
+  let content: JSX.Element;
+
   if (selection.governorateId && selection.districtId && selection.subdistrictId) {
     const subdistrict = getSubdistrictById(selection.subdistrictId);
     if (!subdistrict) {
-      return <p>لم يتم العثور على الناحية المطلوبة.</p>;
+      content = <p>لم يتم العثور على الناحية المطلوبة.</p>;
+    } else {
+      const subWarehouses = warehouses.filter((w) => w.subdistrictId === selection.subdistrictId);
+      content = <WarehousePinsLevel subdistrict={subdistrict} warehouses={subWarehouses} onSelectWarehouse={onSelectWarehouse} />;
     }
-    const subWarehouses = warehouses.filter((w) => w.subdistrictId === selection.subdistrictId);
-    return <WarehousePinsLevel subdistrict={subdistrict} warehouses={subWarehouses} onSelectWarehouse={onSelectWarehouse} />;
-  }
-
-  if (selection.governorateId && selection.districtId) {
+  } else if (selection.governorateId && selection.districtId) {
     const subdistricts = getSubdistricts(selection.districtId);
     const counts = countBySubdistrict(warehouses);
-    return (
+    content = (
       <ChoroplethLevel
         features={subdistricts}
         countsById={counts}
         onSelectFeature={(subdistrictId) => onSelectionChange({ ...selection, subdistrictId })}
       />
     );
-  }
-
-  if (selection.governorateId) {
+  } else if (selection.governorateId) {
     const districts = getDistricts(selection.governorateId);
     const counts = countByDistrict(warehouses);
-    return (
+    content = (
       <ChoroplethLevel
         features={districts}
         countsById={counts}
         onSelectFeature={(districtId) => onSelectionChange({ ...selection, districtId })}
       />
     );
+  } else {
+    const governorates = getGovernorates();
+    const counts = countByGovernorate(warehouses);
+    content = (
+      <ChoroplethLevel
+        features={governorates}
+        countsById={counts}
+        onSelectFeature={(governorateId) => onSelectionChange({ governorateId })}
+      />
+    );
   }
 
-  const governorates = getGovernorates();
-  const counts = countByGovernorate(warehouses);
   return (
-    <ChoroplethLevel
-      features={governorates}
-      countsById={counts}
-      onSelectFeature={(governorateId) => onSelectionChange({ governorateId })}
-    />
+    <div className="map-canvas__level" key={levelKey}>
+      {content}
+    </div>
   );
 }
