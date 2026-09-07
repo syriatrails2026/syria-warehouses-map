@@ -1,0 +1,12 @@
+:root {
+  --color-green-dark: #0f2a1c;
+  --color-green-mid: #1d4a30;
+  --color-green-light: #2f6b46;
+  --color-gold: #c8a84b;
+  --color-sand: #dcc27a;
+  --color-bg-warm: #f7f5ef;
+  --color-bg-warm-alt: #faf9f6;
+  --color-text: #1f2d24;
+  --color-neutral: #e5e2d8;
+  --font-body: 'Tajawal', 'Segoe UI', sans-serif;
+}
