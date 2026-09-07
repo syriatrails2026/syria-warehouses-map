@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #8a9180;
+  color: var(--color-text-muted);
 }
 
 .loading-indicator__spinner {
