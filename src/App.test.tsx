@@ -66,8 +66,9 @@ describe('App', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('opens and closes the "عن المشروع" modal from the header link', () => {
+  it('opens and closes the "عن المشروع" modal from the header link', async () => {
     render(<App />);
+    await screen.findAllByText('حلب');
     fireEvent.click(screen.getByText('عن المشروع'));
     expect(screen.getByRole('dialog', { name: 'عن المشروع' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'إغلاق' }));
