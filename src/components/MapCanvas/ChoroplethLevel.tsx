@@ -2,6 +2,7 @@ import type { Feature, Geometry } from 'geojson';
 import { fitProjection } from '../../map/projection';
 import { colorForCount, makeCountColorScale } from '../../map/colorScale';
 import { useElementSize } from '../../map/useElementSize';
+import { ChoroplethLegend } from './ChoroplethLegend';
 import './ChoroplethLevel.css';
 
 interface FeatureWithIdName {
@@ -25,6 +26,7 @@ export function ChoroplethLevel<P extends FeatureWithIdName>({
   const { path } = fitProjection(features, size.width, size.height);
   const counts = features.map((f) => countsById[f.properties.id] ?? 0);
   const colorScale = makeCountColorScale(counts);
+  const maxCount = Math.max(0, ...counts);
 
   return (
     <div className="choropleth-level" ref={containerRef} data-testid="choropleth-level">
@@ -50,6 +52,7 @@ export function ChoroplethLevel<P extends FeatureWithIdName>({
           );
         })}
       </svg>
+      <ChoroplethLegend maxCount={maxCount} />
     </div>
   );
 }
