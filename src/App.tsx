@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
+import { AboutModal } from './components/AboutModal/AboutModal';
 import { Breadcrumb } from './components/Breadcrumb/Breadcrumb';
 import { ErrorState } from './components/DataState/ErrorState';
 import { LoadingIndicator } from './components/DataState/LoadingIndicator';
@@ -23,6 +24,7 @@ export default function App() {
   const [loadState, setLoadState] = useState<WarehousesLoadState>('loading');
   const [selection, setSelection] = useSelection();
   const [activeWarehouse, setActiveWarehouse] = useState<Warehouse | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const loadWarehouses = useCallback(() => {
     setLoadState('loading');
@@ -103,7 +105,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <Header />
+      <Header onOpenAbout={() => setAboutOpen(true)} />
       <StatsToolbar
         stats={overallStats}
         contextualLabel={contextualLabel}
@@ -134,6 +136,7 @@ export default function App() {
         </div>
       </div>
       {activeWarehouse && <WarehouseCard warehouse={activeWarehouse} onClose={() => setActiveWarehouse(null)} />}
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     </div>
   );
 }
