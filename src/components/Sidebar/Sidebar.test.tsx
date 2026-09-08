@@ -74,4 +74,18 @@ describe('Sidebar', () => {
     fireEvent.change(screen.getByLabelText('ابحث عن مخزن بالاسم'), { target: { value: 'لا يوجد مخزن بهذا الاسم' } });
     expect(screen.getByText('لا توجد نتائج')).toBeInTheDocument();
   });
+
+  it('ranks governorates by count in descending order', () => {
+    render(
+      <Sidebar
+        governorates={GOVERNORATES}
+        countsById={{ 'gov-a': 50, 'gov-b': 190 }}
+        onSelectGovernorate={() => {}}
+        warehouses={WAREHOUSES}
+        onSelectWarehouse={() => {}}
+      />,
+    );
+    const names = screen.getAllByText(/محافظة تجريبية/).map((el) => el.textContent);
+    expect(names).toEqual(['محافظة تجريبية ب', 'محافظة تجريبية أ']);
+  });
 });

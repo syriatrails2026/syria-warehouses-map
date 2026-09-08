@@ -45,6 +45,8 @@
 }
 
 .sidebar__item {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -54,6 +56,18 @@
   padding: 6px 8px;
   margin-bottom: 4px;
   color: var(--color-text);
+}
+
+.sidebar__item-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--color-sand);
+  opacity: 0.45;
+}
+
+.sidebar__item-name,
+.sidebar__item-count {
+  position: relative;
 }
 
 .sidebar__item--active {

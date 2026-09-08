@@ -26,6 +26,11 @@ export function Sidebar({
   const trimmed = query.trim();
   const matches = trimmed.length === 0 ? [] : warehouses.filter((w) => w.name.includes(trimmed)).slice(0, MAX_SEARCH_RESULTS);
 
+  const rankedGovernorates = [...governorates].sort(
+    (a, b) => (countsById[b.properties.id] ?? 0) - (countsById[a.properties.id] ?? 0),
+  );
+  const maxCount = Math.max(0, ...rankedGovernorates.map((g) => countsById[g.properties.id] ?? 0));
+
   return (
     <aside className="sidebar">
       <input
@@ -46,17 +51,22 @@ export function Sidebar({
         </ul>
       )}
       <ul className="sidebar__list">
-        {governorates.map((g) => (
-          <li key={g.properties.id}>
-            <button
-              className={g.properties.id === selectedGovernorateId ? 'sidebar__item sidebar__item--active' : 'sidebar__item'}
-              onClick={() => onSelectGovernorate(g.properties.id)}
-            >
-              <span>{g.properties.name}</span>
-              <span>{countsById[g.properties.id] ?? 0}</span>
-            </button>
-          </li>
-        ))}
+        {rankedGovernorates.map((g) => {
+          const count = countsById[g.properties.id] ?? 0;
+          const barPercent = maxCount === 0 ? 0 : (count / maxCount) * 100;
+          return (
+            <li key={g.properties.id}>
+              <button
+                className={g.properties.id === selectedGovernorateId ? 'sidebar__item sidebar__item--active' : 'sidebar__item'}
+                onClick={() => onSelectGovernorate(g.properties.id)}
+              >
+                <span className="sidebar__item-bar" style={{ width: `${barPercent}%` }} />
+                <span className="sidebar__item-name">{g.properties.name}</span>
+                <span className="sidebar__item-count">{count}</span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </aside>
   );
